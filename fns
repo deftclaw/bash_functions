@@ -43,6 +43,17 @@ locenv() {
     || ( mkdir -v $mine )
 }
 
+p2t() {
+  [[ -f $1.pdf ]]    || return 1
+  [[ ! -f $1.tiff ]] || return 3
+
+  convert \
+   -density 300 $1.pdf \
+   -background white \
+   -alpha background \
+   -compress Group4 $1.tiff
+}
+
 println() {
   printf '%s\n' "$@"
 }
