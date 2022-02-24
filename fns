@@ -1,0 +1,70 @@
+#!/bin/bash
+
+cp_all() {
+  [[ $# -eq 2 ]]|| (printf "Usage: cp. <source_dir> <dest_dir>\n" ; return 1)
+  list=($( ls -a "$1"|ag -v '\.git'|ag -v '\.$' ))
+  printf '%s\n' "${list[@]}"| xargs -I % cp -v "$1"/% "$2"
+}
+
+dec() {
+  out=$(mktemp)
+  gpg -d --yes -o $out $1
+  echo "Decrypted $1 -> $out"
+}
+
+download() {
+  short_name=$(echo "$1"|awk -F '/' '{print $NF}')
+  curl -o /tmp/$short_name -L "$1"
+}
+
+enstor() {
+  gpg -r eeccher-2022 -o ~/data/lib/notes/$1.gpg -se $1
+}
+
+get() {
+  export dir=$(mktemp -d)
+  pushd $dir
+    git clone gitlab:$1 || git clone deftclaw:$1
+    pushd $(echo $1|awk -F '/' '{print $2}')
+      git fetch --all
+      git branch
+    popd
+
+  short=$(echo $1|awk -F '/' '{print $2}')
+  echo "Cloned to $dir/$short"
+}
+
+locenv() {
+  project=$(pwd|awk -F '/' '{print $NF}')
+  mine="$HOME/data/my4winds/$project"
+
+  [[ -d $mine ]] \
+    && ( cp $mine/envrc ./.envrc && direnv allow ) \
+    || ( mkdir -v $mine )
+}
+
+println() {
+  printf '%s\n' "$@"
+}
+
+rm_all() {
+  list=($(whereis $1))
+  println ${list[@]:1} |xrg sudo rm -rvf %
+}
+
+redunst() {
+  killall dunst
+  dunst &
+}
+
+unzimp() {
+  out_dir=$(mktemp -d)
+  archive=$(realpath "$1")
+  pushd $out_dir
+  bsdtar -xf "$archive" -s'|[^/]*/||'|
+  pushd $HOME
+}
+
+xrg() {
+  xargs -I % "$@"
+}
